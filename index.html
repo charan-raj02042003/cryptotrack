@@ -445,8 +445,14 @@ function toggleSLHit(){
   if(hit){
     banner.style.display='block';
     tcard.style.opacity='0.4'; tcard.style.pointerEvents='none';
-    addBtn.disabled=true; calcBtn.disabled=false;
-    
+    addBtn.disabled=true;
+
+        // BUT keep calculate & save buttons active
+    document.getElementById('calcBtn').style.opacity = '1';
+    document.getElementById('saveBtn').style.opacity = '1';
+    document.getElementById('calcBtn').disabled = false;
+    document.getElementById('saveBtn').disabled = false;
+        
     // show SL loss
     const entry=parseFloat(document.getElementById('entry').value)||0;
     const sl=parseFloat(document.getElementById('sl').value)||0;
