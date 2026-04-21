@@ -1,0 +1,815 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="CryptoTrack">
+<meta name="theme-color" content="#ffffff">
+<title>CryptoTrack — Futures Dashboard</title>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;600&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg:       #f5f5f7;
+  --bg2:      #ffffff;
+  --bg3:      #f0f0f4;
+  --bg4:      #e8e8ee;
+  --border:   rgba(0,0,0,0.07);
+  --border2:  rgba(0,0,0,0.13);
+  --text:     #1a1a2e;
+  --text2:    #5a5a7a;
+  --text3:    #9898b8;
+  --green:    #0f6e56;
+  --green-bg: #e1f5ee;
+  --red:      #a32d2d;
+  --red-bg:   #fcebeb;
+  --amber:    #854f0b;
+  --amber-bg: #faeeda;
+  --blue:     #0c447c;
+  --blue-bg:  #e6f1fb;
+  --accent:   #534ab7;
+  --accent-bg:#eeedfe;
+  --sans:     'Inter', sans-serif;
+  --mono:     'IBM Plex Mono', monospace;
+  --radius:   12px;
+  --radius-sm:8px;
+  --shadow:   0 1px 3px rgba(0,0,0,0.08);
+}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+html,body{height:100%;overflow:hidden;background:var(--bg);font-family:var(--sans);color:var(--text);font-size:14px}
+#app{display:flex;flex-direction:column;height:100vh;height:100dvh}
+
+/* ── Header ── */
+.header{padding:48px 16px 12px;background:var(--bg2);border-bottom:1px solid var(--border);flex-shrink:0;box-shadow:var(--shadow)}
+.header-top{display:flex;justify-content:space-between;align-items:center}
+.app-name{font-family:var(--mono);font-size:12px;font-weight:600;color:var(--accent);letter-spacing:.06em}
+.app-sub{font-size:10px;color:var(--text3);margin-top:2px}
+.hcap{text-align:right}
+.hcap-label{font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.05em}
+.hcap-val{font-family:var(--mono);font-size:12px;color:var(--text2);margin-top:1px}
+.hcap-val.set{color:var(--text);font-weight:600}
+
+/* ── Summary strip ── */
+.summary-strip{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;padding:10px 12px;background:var(--bg2);border-bottom:1px solid var(--border);flex-shrink:0}
+.s-card{background:var(--bg3);border-radius:var(--radius-sm);padding:7px 8px}
+.s-label{font-size:9px;color:var(--text3);text-transform:uppercase;letter-spacing:.05em;margin-bottom:2px}
+.s-val{font-family:var(--mono);font-size:11px;font-weight:600;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.s-val.green{color:var(--green)}.s-val.red{color:var(--red)}.s-val.amber{color:var(--amber)}
+
+/* ── Scroll body ── */
+.scroll-body{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:0 0 76px}
+.scroll-body::-webkit-scrollbar{width:2px}
+.scroll-body::-webkit-scrollbar-thumb{background:var(--bg4)}
+
+/* ── Bottom nav ── */
+.bottom-nav{position:fixed;bottom:0;left:0;right:0;background:var(--bg2);border-top:1px solid var(--border);display:flex;padding-bottom:env(safe-area-inset-bottom);z-index:100;box-shadow:0 -1px 8px rgba(0,0,0,0.06)}
+.nav-btn{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;background:none;border:none;color:var(--text3);font-family:var(--sans);font-size:10px;cursor:pointer;padding:10px 4px;transition:color .15s}
+.nav-btn.active{color:var(--accent)}
+.nav-icon{font-size:17px;line-height:1}
+
+/* ── Pages ── */
+.page{display:none}.page.active{display:block}
+.section{padding:14px 14px 2px}
+.section-title{font-size:10px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.07em;margin-bottom:10px;font-family:var(--mono)}
+
+/* ── Cards ── */
+.card{background:var(--bg2);border:0.5px solid var(--border2);border-radius:var(--radius);padding:14px;margin-bottom:10px;box-shadow:var(--shadow)}
+
+/* ── Forms ── */
+.form-grid{display:grid;grid-template-columns:1fr 1fr;gap:9px;margin-bottom:9px}
+.form-grid.w1{grid-template-columns:1fr}
+.form-grid.w3{grid-template-columns:1fr 1fr 1fr}
+.fg{display:flex;flex-direction:column;gap:4px}
+.fg label{font-size:10px;font-weight:500;color:var(--text3);text-transform:uppercase;letter-spacing:.05em}
+.fg input,.fg select{background:var(--bg3);border:0.5px solid var(--border2);border-radius:var(--radius-sm);color:var(--text);font-family:var(--sans);font-size:14px;padding:9px 11px;width:100%;-webkit-appearance:none;appearance:none}
+.fg input:focus,.fg select:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 3px rgba(83,74,183,.1)}
+.fg .hint{font-size:10px;color:var(--text3);font-family:var(--mono)}
+.lev-tag{background:var(--blue-bg);color:var(--blue);border:0.5px solid rgba(12,68,124,.2);border-radius:var(--radius-sm);padding:9px 11px;font-family:var(--mono);font-size:13px;font-weight:600}
+.pos-info{background:var(--bg3);border-radius:var(--radius-sm);padding:9px 11px;font-size:11px;color:var(--text2);font-family:var(--mono);line-height:1.7;display:none;margin-bottom:9px}
+
+/* ── Metric cards ── */
+.metric-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:8px;margin-bottom:10px}
+.metric-grid.w4{grid-template-columns:repeat(4,1fr)}
+.metric{background:var(--bg3);border-radius:var(--radius-sm);padding:10px 12px}
+.metric-label{font-size:10px;color:var(--text3);margin-bottom:3px;text-transform:uppercase;letter-spacing:.04em}
+.metric-val{font-family:var(--mono);font-size:14px;font-weight:600;color:var(--text)}
+.metric-val.green{color:var(--green)}.metric-val.red{color:var(--red)}.metric-val.amber{color:var(--amber)}
+
+/* ── Targets ── */
+.targets-sub{font-size:10px;color:var(--text3);margin-bottom:10px;line-height:1.5}
+.tg-header{display:grid;grid-template-columns:32px 1fr 90px 1fr 32px;gap:6px;font-size:9px;color:var(--text3);text-transform:uppercase;letter-spacing:.05em;margin-bottom:6px;padding:0 1px;font-family:var(--mono)}
+.tg-row{display:grid;grid-template-columns:32px 1fr 90px 1fr 32px;gap:6px;align-items:center;margin-bottom:8px}
+.tg-row input{font-size:13px;padding:8px 9px}
+.tg-pnl{font-family:var(--mono);font-size:11px;color:var(--text3);text-align:right}
+.tg-check{display:flex;flex-direction:column;align-items:center;gap:2px}
+.tg-check input[type=checkbox]{width:16px;height:16px;accent-color:var(--accent);cursor:pointer}
+.tg-check span{font-size:8px;color:var(--text3);text-align:center;line-height:1.2}
+.add-tg-btn{background:none;border:0.5px dashed var(--border2);border-radius:var(--radius-sm);color:var(--accent);font-family:var(--sans);font-size:13px;padding:9px;width:100%;cursor:pointer;margin-bottom:10px}
+.add-tg-btn:disabled{opacity:.4;cursor:not-allowed}
+
+/* SL hit banner */
+.sl-hit-banner{background:var(--red-bg);border:0.5px solid rgba(163,45,45,.25);border-radius:var(--radius-sm);padding:10px 12px;margin-bottom:10px;display:none}
+.sl-hit-banner .sl-title{font-size:12px;font-weight:600;color:var(--red);margin-bottom:2px}
+.sl-hit-banner .sl-desc{font-size:11px;color:var(--text2)}
+
+/* SL checkbox row */
+.sl-check-row{display:flex;align-items:center;gap:8px;margin-bottom:10px;padding:9px 11px;background:var(--red-bg);border-radius:var(--radius-sm);border:0.5px solid rgba(163,45,45,.2)}
+.sl-check-row input[type=checkbox]{width:17px;height:17px;accent-color:var(--red);cursor:pointer;flex-shrink:0}
+.sl-check-row label{font-size:12px;color:var(--red);font-weight:500;cursor:pointer}
+.sl-check-row .sl-loss{font-family:var(--mono);font-size:11px;color:var(--red);margin-left:auto}
+
+/* ── Result box ── */
+.result-box{background:var(--bg3);border-radius:var(--radius-sm);padding:12px;margin-top:10px}
+.rrow{display:flex;justify-content:space-between;align-items:center;padding:3px 0;font-size:12px}
+.rrow .rl{color:var(--text2)}.rrow .rv{font-family:var(--mono);font-weight:600;color:var(--text)}
+.rrow .rv.green{color:var(--green)}.rrow .rv.red{color:var(--red)}.rrow .rv.amber{color:var(--amber)}
+.rdivider{border:none;border-top:0.5px solid var(--border2);margin:5px 0}
+.rv-big{font-size:15px!important}
+
+/* ── Buttons ── */
+.btn-row{display:flex;gap:8px;margin-top:10px}
+.btn{flex:1;padding:11px;border-radius:var(--radius-sm);font-family:var(--sans);font-size:13px;font-weight:500;cursor:pointer;border:0.5px solid var(--border2);background:var(--bg3);color:var(--text);transition:opacity .15s,transform .1s}
+.btn.primary{background:var(--accent);border-color:var(--accent);color:#fff}
+.btn:active{opacity:.8;transform:scale(.98)}
+.btn:disabled{opacity:.4;cursor:not-allowed}
+
+/* ── Fee note / warning ── */
+.fee-note{font-size:10px;color:var(--text3);background:var(--bg3);border-radius:var(--radius-sm);padding:8px 11px;line-height:1.6;margin-top:6px}
+.warning{font-size:11px;color:var(--amber);background:var(--amber-bg);border-radius:var(--radius-sm);padding:8px 11px;margin-top:8px}
+
+/* ── Trade cards (history) ── */
+.trade-card{background:var(--bg2);border:0.5px solid var(--border2);border-radius:var(--radius);padding:13px;margin-bottom:9px;box-shadow:var(--shadow)}
+.trade-header{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:10px}
+.trade-pair{font-family:var(--mono);font-size:14px;font-weight:600}
+.trade-meta{font-size:10px;color:var(--text3);margin-top:2px}
+.trade-pnl-val{font-family:var(--mono);font-size:15px;font-weight:700;text-align:right}
+.trade-pnl-inr{font-family:var(--mono);font-size:10px;color:var(--text2);text-align:right}
+.trade-stats{display:grid;grid-template-columns:repeat(3,1fr);gap:6px}
+.tstat{background:var(--bg3);border-radius:6px;padding:6px 8px}
+.tstat-label{font-size:9px;color:var(--text3);text-transform:uppercase;letter-spacing:.04em}
+.tstat-val{font-family:var(--mono);font-size:11px;color:var(--text);margin-top:2px;font-weight:600}
+.badge{display:inline-block;padding:2px 7px;border-radius:5px;font-size:10px;font-weight:600;font-family:var(--mono);letter-spacing:.04em}
+.badge.long{background:var(--green-bg);color:var(--green)}.badge.short{background:var(--red-bg);color:var(--red)}
+.badge.sl{background:var(--red-bg);color:var(--red)}.badge.tp{background:var(--green-bg);color:var(--green)}
+.del-btn{background:none;border:none;color:var(--text3);font-size:15px;cursor:pointer;padding:2px 4px}
+.empty-state{text-align:center;padding:44px 20px;color:var(--text3);font-size:13px}
+
+/* ── Capital page ── */
+.cap-setup-note{font-size:11px;color:var(--text2);margin-bottom:12px;line-height:1.6}
+.cap-row{display:flex;justify-content:space-between;align-items:center;padding:9px 0;border-bottom:0.5px solid var(--border)}
+.cap-row:last-child{border-bottom:none}
+.cap-rl{font-size:12px;color:var(--text2)}
+.cap-rv{font-family:var(--mono);font-size:12px;font-weight:600;color:var(--text)}
+.sync-hint{font-size:10px;color:var(--accent);margin-top:4px}
+
+/* ── Charts ── */
+.chart-wrap{position:relative;width:100%;height:185px;margin-top:8px}
+</style>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+</head>
+<body>
+<div id="app">
+
+  <!-- Header -->
+  <div class="header">
+    <div class="header-top">
+      <div>
+        <div class="app-name">CRYPTOTRACK</div>
+        <div class="app-sub">Delta Exchange · 25x Futures</div>
+      </div>
+      <div class="hcap">
+        <div class="hcap-label">Balance</div>
+        <div class="hcap-val" id="hCapVal">Not set</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Summary strip -->
+  <div class="summary-strip">
+    <div class="s-card"><div class="s-label">Trades</div><div class="s-val" id="sTrades">0</div></div>
+    <div class="s-card"><div class="s-label">Net $</div><div class="s-val" id="sNet">$0.00</div></div>
+    <div class="s-card"><div class="s-label">Net ₹</div><div class="s-val" id="sNetINR">₹0</div></div>
+    <div class="s-card"><div class="s-label">Win %</div><div class="s-val" id="sWin">—</div></div>
+  </div>
+
+  <!-- Scroll body -->
+  <div class="scroll-body" id="scrollBody">
+
+    <!-- ══ PAGE: New Trade ══ -->
+    <div class="page active" id="page-new">
+      <div class="section">
+        <div class="section-title">Trade details</div>
+        <div class="card">
+          <div class="form-grid">
+            <div class="fg"><label>Coin / Pair</label><input id="coin" placeholder="e.g. ETH/USDT"/></div>
+            <div class="fg"><label>Direction</label>
+              <select id="dir"><option value="long">Long ↑</option><option value="short">Short ↓</option></select>
+            </div>
+          </div>
+          <div class="form-grid">
+            <div class="fg"><label>Leverage</label><div class="lev-tag">25x fixed</div></div>
+            <div class="fg"><label>Entry order type</label>
+              <select id="orderType" onchange="liveCalc()">
+                <option value="taker">Taker — 0.05%</option>
+                <option value="maker">Maker — 0.02%</option>
+              </select>
+            </div>
+          </div>
+          <div class="form-grid">
+            <div class="fg"><label>Entry price (USDT)</label><input id="entry" type="number" inputmode="decimal" placeholder="e.g. 2272" oninput="liveCalc()"/></div>
+            <div class="fg"><label>Stop loss price</label><input id="sl" type="number" inputmode="decimal" placeholder="e.g. 2200" oninput="liveCalc()"/></div>
+          </div>
+          <div class="form-grid">
+            <div class="fg">
+              <label>Lot size</label>
+              <input id="lotSize" type="number" inputmode="decimal" placeholder="e.g. 0.01" step="0.0001" oninput="liveCalc()"/>
+              <span class="hint" id="lotHint"></span>
+            </div>
+            <div class="fg"><label>Total quantity (lots)</label><input id="qtyTotal" type="number" inputmode="decimal" placeholder="e.g. 35" oninput="liveCalc()"/></div>
+          </div>
+          <div class="pos-info" id="posInfo"></div>
+        </div>
+
+        <!-- SL hit checkbox -->
+        <div class="sl-check-row" id="slCheckRow" style="display:none">
+          <input type="checkbox" id="slHit" onchange="toggleSLHit()"/>
+          <label for="slHit">Stop loss was hit (all lots closed at SL — taker fee applied)</label>
+          <span class="sl-loss" id="slLossLabel"></span>
+        </div>
+
+        <!-- SL hit banner when checked -->
+        <div class="sl-hit-banner" id="slHitBanner">
+          <div class="sl-title">SL Hit — Position closed at stop loss</div>
+          <div class="sl-desc" id="slHitDesc"></div>
+        </div>
+
+        <div class="section-title">Targets</div>
+        <div class="card" id="targetsCard">
+          <div class="targets-sub">Enter lots to close at each target. Tick TP if the target was actually hit (taker fee). Unticked targets are used for planning only.</div>
+          <div class="tg-header"><span>TP?</span><span>Price</span><span>Lots close</span><span>Gross P&L</span><span></span></div>
+          <div id="targetRows"></div>
+          <button class="add-tg-btn" id="addTgBtn" onclick="addTarget()">+ Add target</button>
+          <div id="calcResult"></div>
+          <div class="btn-row">
+            <button class="btn" id="calcBtn" onclick="calcTrade()">Calculate</button>
+            <button class="btn primary" id="saveBtn" onclick="saveTrade()">Save trade</button>
+          </div>
+        </div>
+        <div class="fee-note">Delta Exchange: Entry order type selected above · SL always taker (0.05%) · TP ticked = taker (0.05%), unticked = maker (0.02%) · +18% GST on all fees · Fees on notional value.</div>
+      </div>
+    </div>
+
+    <!-- ══ PAGE: History ══ -->
+    <div class="page" id="page-history">
+      <div class="section">
+        <div class="section-title">Trade history</div>
+        <div id="historyList"><div class="empty-state">📭<br><br>No trades saved yet.</div></div>
+      </div>
+    </div>
+
+    <!-- ══ PAGE: Capital ══ -->
+    <div class="page" id="page-capital">
+      <div class="section">
+        <div class="section-title">Set / update capital</div>
+        <div class="card">
+          <div class="cap-setup-note">Enter your trading capital. Rate is fixed at ₹85 = $1 for all P&L tracking.</div>
+          <div class="form-grid">
+            <div class="fg"><label>Capital (USD $)</label><input id="capUSD" type="number" inputmode="decimal" placeholder="e.g. 500" oninput="syncCap('usd')"/></div>
+            <div class="fg"><label>Capital (INR ₹)</label><input id="capINR" type="number" inputmode="decimal" placeholder="e.g. 42500" oninput="syncCap('inr')"/></div>
+          </div>
+          <div class="sync-hint">Fields auto-sync · ₹85 = $1 fixed</div>
+          <div class="btn-row"><button class="btn primary" onclick="saveCapital()">Save capital</button></div>
+        </div>
+
+        <div class="section-title" style="margin-top:4px">Summary</div>
+        <div class="card">
+          <div class="metric-grid">
+            <div class="metric"><div class="metric-label">Starting capital</div><div class="metric-val" id="msCap">—</div></div>
+            <div class="metric"><div class="metric-label">Starting capital (₹)</div><div class="metric-val" id="msCapINR">—</div></div>
+            <div class="metric"><div class="metric-label">Total trades</div><div class="metric-val" id="msTrades">0</div></div>
+            <div class="metric"><div class="metric-label">Win rate</div><div class="metric-val" id="msWin">—</div></div>
+          </div>
+          <div class="cap-row"><span class="cap-rl">Gross P&L</span><span class="cap-rv" id="csGross">—</span></div>
+          <div class="cap-row"><span class="cap-rl">Total fees + GST</span><span class="cap-rv amber" id="csFees" style="color:var(--amber)">—</span></div>
+          <div class="cap-row"><span class="cap-rl">Net P&L (USD)</span><span class="cap-rv" id="csNet">—</span></div>
+          <div class="cap-row"><span class="cap-rl">Net P&L (INR)</span><span class="cap-rv" id="csNetINR">—</span></div>
+          <div class="cap-row" style="padding-top:12px"><span class="cap-rl" style="font-weight:600;color:var(--text)">Current balance (USD)</span><span class="cap-rv" id="csBal" style="font-size:15px">—</span></div>
+          <div class="cap-row"><span class="cap-rl" style="font-weight:600;color:var(--text)">Current balance (INR)</span><span class="cap-rv" id="csBalINR" style="font-size:15px">—</span></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══ PAGE: Charts ══ -->
+    <div class="page" id="page-chart">
+      <div class="section">
+        <div class="section-title">Cumulative net P&L (USD)</div>
+        <div class="card"><div class="chart-wrap"><canvas id="pnlChart" role="img" aria-label="Cumulative net P&L">Cumulative P&L</canvas></div></div>
+        <div class="section-title">Net P&L per trade</div>
+        <div class="card"><div class="chart-wrap" style="height:160px"><canvas id="barChart" role="img" aria-label="Per trade P&L">Per trade</canvas></div></div>
+        <div class="section-title">Cumulative fees + GST</div>
+        <div class="card"><div class="chart-wrap" style="height:150px"><canvas id="feeChart" role="img" aria-label="Cumulative fees">Fees</canvas></div></div>
+      </div>
+    </div>
+
+  </div><!-- /scroll-body -->
+
+  <!-- Bottom nav -->
+  <nav class="bottom-nav">
+    <button class="nav-btn active" onclick="switchPage('new',this)"><span class="nav-icon">＋</span><span>New</span></button>
+    <button class="nav-btn" onclick="switchPage('history',this)"><span class="nav-icon">📋</span><span>History</span></button>
+    <button class="nav-btn" onclick="switchPage('capital',this)"><span class="nav-icon">₹</span><span>Capital</span></button>
+    <button class="nav-btn" onclick="switchPage('chart',this)"><span class="nav-icon">📈</span><span>Charts</span></button>
+  </nav>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<script>
+const SUPABASE_URL = "https://axsbbodplufpydiwvoqe.supabase.co"; // 🔑 Replace with your Project URL
+const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImF4c2Jib2RwbHVmcHlkaXd2b3FlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzY3MDAyNjMsImV4cCI6MjA5MjI3NjI2M30.YHefqWYuppLrTadnP9CkdomNuZjoUkW_S7yMnBfpODE"; // 🔑 Replace with your anon/public key
+
+const db = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+const LEV=25, FEE_TAKER=0.0005, FEE_MAKER=0.0002, GST=0.18, INR_RATE=85;
+let trades=[], capital=null, targetCount=0, lineChart, barChartInst, feeChartInst;
+
+/* ── Loading overlay helper ── */
+function showLoading(msg='Loading…'){
+  let el=document.getElementById('loadingOverlay');
+  if(!el){
+    el=document.createElement('div');
+    el.id='loadingOverlay';
+    el.style.cssText='position:fixed;inset:0;background:rgba(245,245,247,.85);display:flex;align-items:center;justify-content:center;z-index:999;font-family:var(--mono);font-size:13px;color:var(--text2);';
+    document.body.appendChild(el);
+  }
+  el.textContent=msg; el.style.display='flex';
+}
+function hideLoading(){ const el=document.getElementById('loadingOverlay'); if(el) el.style.display='none'; }
+
+/* ── Helpers ── */
+function feeRate(t){return t==='taker'?FEE_TAKER:FEE_MAKER;}
+function calcFee(notional,t){return notional*feeRate(t)*(1+GST);}
+function fmt(v,d=2){return(v>=0?'+':'')+v.toFixed(d);}
+function fmtINR(v){return(v>=0?'+':'−')+'₹'+Math.abs(v*INR_RATE).toFixed(2);}
+function col(v){return v>=0?'var(--green)':'var(--red)';}
+
+/* ── Navigation ── */
+function switchPage(id,btn){
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.nav-btn').forEach(b=>b.classList.remove('active'));
+  document.getElementById('page-'+id).classList.add('active');
+  btn.classList.add('active');
+  document.getElementById('scrollBody').scrollTop=0;
+  if(id==='chart') setTimeout(renderCharts,60);
+  if(id==='capital'){updateCapitalTab();updateSummary();}
+}
+
+/* ── Supabase: Load trades ── */
+function sbErr(e){
+  if(!e) return 'Unknown error';
+  if(typeof e==='string') return e;
+  return [e.message,e.details,e.hint,e.code].filter(Boolean).join(' | ')||JSON.stringify(e);
+}
+function showDbError(msg){
+  document.getElementById('dbErrBanner')?.remove();
+  const sql='create table trades (\n  id bigint generated always as identity primary key,\n  coin text, dir text, entry numeric, lot_size numeric,\n  qty numeric, sl numeric, order_type text, sl_hit boolean,\n  targets text, notional_entry numeric, margin numeric,\n  gross_pnl numeric, fees_amt numeric, net_pnl numeric,\n  roe numeric, trade_date text\n);\ncreate table settings (key text primary key, value text);\nalter table trades disable row level security;\nalter table settings disable row level security;';
+  const b=document.createElement('div');
+  b.id='dbErrBanner';
+  b.style.cssText='background:#fcebeb;border:0.5px solid rgba(163,45,45,.3);border-radius:10px;padding:12px 14px;margin:12px 14px;font-size:12px;line-height:1.6;';
+  b.innerHTML='<div style="font-weight:600;color:#a32d2d;margin-bottom:6px">Supabase error</div>'
+    +'<div style="color:#5a5a7a;font-family:monospace;font-size:11px;word-break:break-all;margin-bottom:8px">'+msg+'</div>'
+    +'<div style="color:#5a5a7a;font-size:11px;margin-bottom:6px"><b>Common fixes:</b> 1. Run the SQL below in Supabase SQL Editor &nbsp; 2. Disable RLS on both tables &nbsp; 3. Check your URL and API key</div>'
+    +'<pre style="background:#f0f0f4;padding:8px;border-radius:6px;font-size:10px;overflow-x:auto;white-space:pre;margin-bottom:8px">'+sql+'</pre>'
+    +'<button onclick="this.parentElement.remove()" style="background:none;border:0.5px solid rgba(163,45,45,.3);border-radius:6px;color:#a32d2d;padding:4px 10px;font-size:11px;cursor:pointer">Dismiss</button>';
+  const s=document.querySelector('#page-new .section')||document.querySelector('.section');
+  if(s) s.insertBefore(b,s.firstChild);
+}
+async function loadTrades(){
+  showLoading('Loading trades…');
+  try{
+    const {data,error}=await db.from('trades').select('*').order('id',{ascending:true});
+    if(error) throw error;
+    trades=(data||[]).map(normaliseTrade);
+  } catch(e){
+    console.error('loadTrades error:',e);
+    hideLoading();
+    showDbError(sbErr(e));
+    updateSummary(); renderHistory();
+    return;
+  }
+  try{
+    const {data,error}=await db.from('settings').select('value').eq('key','capital').single();
+    if(!error&&data){capital=parseFloat(data.value);applyCapitalUI();}
+  } catch(e){}
+  hideLoading();
+  updateSummary();
+  renderHistory();
+}
+
+/* ── Supabase: Save capital ── */
+async function saveCapital(){
+  const u=parseFloat(document.getElementById('capUSD').value)||0;
+  if(!u){alert('Enter a valid capital amount.');return;}
+  showLoading('Saving capital…');
+  try{
+    const {error}=await db.from('settings').upsert({key:'capital',value:String(u)},{onConflict:'key'});
+    if(error) throw error;
+    capital=u; applyCapitalUI(); updateSummary(); updateCapitalTab();
+    alert('Capital saved: $'+u.toFixed(2)+' / ₹'+(u*INR_RATE).toFixed(2));
+  } catch(e){
+    alert('Failed to save capital: '+sbErr(e));
+  }
+  hideLoading();
+}
+
+function syncCap(src){
+  if(src==='usd'){const u=parseFloat(document.getElementById('capUSD').value)||0;document.getElementById('capINR').value=u?(u*INR_RATE).toFixed(0):'';}
+  else{const r=parseFloat(document.getElementById('capINR').value)||0;document.getElementById('capUSD').value=r?(r/INR_RATE).toFixed(2):'';}
+}
+function applyCapitalUI(){
+  if(capital!=null){
+    const el=document.getElementById('hCapVal');
+    el.textContent='$'+capital.toFixed(2); el.classList.add('set');
+    document.getElementById('capUSD').value=capital.toFixed(2);
+    document.getElementById('capINR').value=(capital*INR_RATE).toFixed(0);
+  }
+}
+
+/* ── SL hit toggle ── */
+function toggleSLHit(){
+  const hit=document.getElementById('slHit').checked;
+  const banner=document.getElementById('slHitBanner');
+  const tcard=document.getElementById('targetsCard');
+  const addBtn=document.getElementById('addTgBtn');
+  const calcBtn=document.getElementById('calcBtn');
+
+  if(hit){
+    banner.style.display='block';
+    tcard.style.opacity='0.4'; tcard.style.pointerEvents='none';
+    addBtn.disabled=true; calcBtn.disabled=false;
+    // show SL loss
+    const entry=parseFloat(document.getElementById('entry').value)||0;
+    const sl=parseFloat(document.getElementById('sl').value)||0;
+    const lotSize=parseFloat(document.getElementById('lotSize').value)||0;
+    const qty=parseFloat(document.getElementById('qtyTotal').value)||0;
+    const dir=document.getElementById('dir').value;
+    if(entry&&sl&&lotSize&&qty){
+      const gross=(dir==='long'?sl-entry:entry-sl)*lotSize*qty;
+      const notional=sl*lotSize*qty;
+      const fee=calcFee(notional,'taker');
+      const net=gross-fee;
+      document.getElementById('slHitDesc').textContent=`Gross loss: ${gross.toFixed(4)}$ · SL exit fee (taker+GST): ${fee.toFixed(4)}$ · Net loss: ${net.toFixed(4)}$ / ₹${(net*INR_RATE).toFixed(2)}`;
+    }
+  } else {
+    banner.style.display='none';
+    tcard.style.opacity='1'; tcard.style.pointerEvents='auto';
+    addBtn.disabled=false;
+  }
+}
+
+/* ── Targets ── */
+function addTarget(price='',lots='',isTp=false){
+  targetCount++;
+  const id='tgr'+targetCount;
+  const div=document.createElement('div');
+  div.className='tg-row'; div.id=id;
+  div.innerHTML=`
+    <div class="tg-check">
+      <input type="checkbox" class="tc" id="tc${targetCount}" ${isTp?'checked':''} onchange="liveCalc()"/>
+      <span>TP</span>
+    </div>
+    <input type="number" placeholder="Price" class="tp" inputmode="decimal" oninput="liveCalc()"/>
+    <input type="number" placeholder="Lots" class="tl" inputmode="decimal" step="1" oninput="liveCalc()"/>
+    <span class="tg-pnl">—</span>
+    <button style="background:none;border:none;color:var(--red);font-size:15px;cursor:pointer;padding:2px 4px" onclick="removeTarget('${id}')">✕</button>`;
+  document.getElementById('targetRows').appendChild(div);
+  if(price) div.querySelector('.tp').value=price;
+  if(lots) div.querySelector('.tl').value=lots;
+}
+function removeTarget(id){document.getElementById(id)?.remove();liveCalc();}
+function getTargets(){
+  return [...document.querySelectorAll('.tg-row')].map(r=>({
+    isTp: r.querySelector('.tc').checked,
+    price: parseFloat(r.querySelector('.tp').value)||0,
+    lots:  parseFloat(r.querySelector('.tl').value)||0,
+    el:    r.querySelector('.tg-pnl')
+  }));
+}
+
+/* ── Core computation ── */
+function computeTrade(entry,lotSize,qty,dir,targets,entryOrderType,slHit,slPrice){
+  const notionalEntry=entry*lotSize*qty;
+  const margin=notionalEntry/LEV;
+  const entryFee=calcFee(notionalEntry,entryOrderType);
+
+  // SL scenario — all lots closed at SL, taker
+  if(slHit&&slPrice){
+    const gross=(dir==='long'?slPrice-entry:entry-slPrice)*lotSize*qty;
+    const exitFee=calcFee(slPrice*lotSize*qty,'taker');
+    const totalFees=entryFee+exitFee;
+    const netPnl=gross-totalFees;
+    const roe=margin>0?(netPnl/margin)*100:0;
+    return{notionalEntry,margin,entryFee,totalExitFee:exitFee,totalFees,totalGross:gross,netPnl,roe,tResults:[],slHit:true};
+  }
+
+  let totalGross=0,totalExitFee=0;
+  const tResults=[];
+  for(const t of targets){
+    if(!t.price||!t.lots){tResults.push(null);continue;}
+    const notionalExit=t.price*lotSize*t.lots;
+    const gross=(dir==='long'?t.price-entry:entry-t.price)*lotSize*t.lots;
+    // TP ticked = taker, unticked = maker (limit order sitting there)
+    const exitFeeType=t.isTp?'taker':'maker';
+    const exitFee=calcFee(notionalExit,exitFeeType);
+    totalExitFee+=exitFee; totalGross+=gross;
+    tResults.push({gross,exitFee,exitFeeType,notionalExit});
+  }
+  const totalFees=entryFee+totalExitFee;
+  const netPnl=totalGross-totalFees;
+  const roe=margin>0?(netPnl/margin)*100:0;
+  return{notionalEntry,margin,entryFee,totalExitFee,totalFees,totalGross,netPnl,roe,tResults,slHit:false};
+}
+
+/* ── Live calc (updates target P&L spans) ── */
+function liveCalc(){
+  const entry=parseFloat(document.getElementById('entry').value)||0;
+  const lotSize=parseFloat(document.getElementById('lotSize').value)||0;
+  const qty=parseFloat(document.getElementById('qtyTotal').value)||0;
+  const sl=parseFloat(document.getElementById('sl').value)||0;
+  const dir=document.getElementById('dir').value;
+  const orderType=document.getElementById('orderType').value;
+  const info=document.getElementById('posInfo');
+  const slRow=document.getElementById('slCheckRow');
+  const slLbl=document.getElementById('slLossLabel');
+
+  if(entry&&lotSize&&qty){
+    const notional=entry*lotSize*qty, margin=notional/LEV;
+    document.getElementById('lotHint').textContent='1 lot ≈ $'+(entry*lotSize).toFixed(4);
+    info.style.display='block';
+    info.innerHTML=`Notional: $${notional.toFixed(2)} · Margin (25x): $${margin.toFixed(2)} / ₹${(margin*INR_RATE).toFixed(2)}\nEntry fee: $${calcFee(notional,orderType).toFixed(4)}`;
+  } else { info.style.display='none'; }
+
+  // Show SL checkbox only when SL price entered
+  if(sl&&entry&&lotSize&&qty){
+    slRow.style.display='flex';
+    const gross=(dir==='long'?sl-entry:entry-sl)*lotSize*qty;
+    const fee=calcFee(sl*lotSize*qty,'taker');
+    slLbl.textContent=(gross-fee).toFixed(4)+'$';
+    slLbl.style.color='var(--red)';
+  } else { slRow.style.display='none'; document.getElementById('slHit').checked=false; toggleSLHit(); }
+
+  if(!entry||!lotSize||!qty) return;
+  const targets=getTargets();
+  const r=computeTrade(entry,lotSize,qty,dir,targets,orderType,false,0);
+  targets.forEach((t,i)=>{
+    if(t.el) t.el.textContent=r.tResults[i]!=null?(r.tResults[i].gross>=0?'+':'')+r.tResults[i].gross.toFixed(4)+'$':'—';
+  });
+}
+
+/* ── Calculate (full breakdown) ── */
+function calcTrade(){
+  const entry=parseFloat(document.getElementById('entry').value);
+  const lotSize=parseFloat(document.getElementById('lotSize').value);
+  const qty=parseFloat(document.getElementById('qtyTotal').value);
+  const dir=document.getElementById('dir').value;
+  const sl=parseFloat(document.getElementById('sl').value)||0;
+  const orderType=document.getElementById('orderType').value;
+  const slHit=document.getElementById('slHit').checked;
+  if(!entry||!lotSize||!qty){alert('Fill entry price, lot size, and quantity.');return;}
+  const targets=getTargets();
+  const r=computeTrade(entry,lotSize,qty,dir,targets,orderType,slHit,sl);
+
+  let body='';
+  if(slHit){
+    body=`<div class="rrow"><span class="rl">SL price</span><span class="rv">$${sl}</span></div>
+          <div class="rrow"><span class="rl">Gross loss</span><span class="rv red">${fmt(r.totalGross,4)}$</span></div>
+          <div class="rrow"><span class="rl">SL exit fee (taker+GST)</span><span class="rv amber">−${r.totalExitFee.toFixed(4)}$</span></div>`;
+  } else {
+    const slLoss=sl?(dir==='long'?sl-entry:entry-sl)*lotSize*qty:null;
+    const rr=slLoss&&r.totalGross?Math.abs(r.totalGross/slLoss).toFixed(2):null;
+    let tRows='';
+    targets.forEach((t,i)=>{
+      const res=r.tResults[i];
+      if(t.price&&t.lots&&res){
+        tRows+=`<div class="rrow"><span class="rl">T${i+1} ${t.isTp?'✅':'📋'} ${t.lots}L@$${t.price} (${t.isTp?'taker':'maker'})</span><span class="rv" style="color:${col(res.gross)}">${fmt(res.gross,4)}$</span></div>`;
+      }
+    });
+    const closedLots=targets.filter(t=>t.price&&t.lots).reduce((a,t)=>a+t.lots,0);
+    const warn=closedLots<qty?`<div class="warning">${(qty-closedLots).toFixed(0)} lots have no target.</div>`:'';
+    body=`${sl?`<div class="rrow"><span class="rl">Max loss if SL hit</span><span class="rv red">${slLoss.toFixed(4)}$</span></div>`:''}
+          ${rr?`<div class="rrow"><span class="rl">Risk / Reward</span><span class="rv">1 : ${rr}</span></div>`:''}
+          <hr class="rdivider"/>${tRows}<hr class="rdivider"/>
+          <div class="rrow"><span class="rl">Total gross P&L</span><span class="rv" style="color:${col(r.totalGross)}">${fmt(r.totalGross,4)}$</span></div>${warn}`;
+  }
+
+  document.getElementById('calcResult').innerHTML=`<div class="result-box">
+    <div class="rrow"><span class="rl">Notional value</span><span class="rv">$${r.notionalEntry.toFixed(2)}</span></div>
+    <div class="rrow"><span class="rl">Margin (25x)</span><span class="rv">$${r.margin.toFixed(2)} / ₹${(r.margin*INR_RATE).toFixed(2)}</span></div>
+    <hr class="rdivider"/>${body}<hr class="rdivider"/>
+    <div class="rrow"><span class="rl">Entry fee (${orderType}+GST)</span><span class="rv amber">−${r.entryFee.toFixed(4)}$</span></div>
+    <div class="rrow"><span class="rl">Exit fees (+GST)</span><span class="rv amber">−${r.totalExitFee.toFixed(4)}$</span></div>
+    <div class="rrow"><span class="rl">Total fees+GST</span><span class="rv amber">−${r.totalFees.toFixed(4)}$</span></div>
+    <hr class="rdivider"/>
+    <div class="rrow"><span class="rl" style="color:var(--text);font-weight:600">Net P&L</span><span class="rv rv-big" style="color:${col(r.netPnl)}">${fmt(r.netPnl,4)}$</span></div>
+    <div class="rrow"><span class="rl" style="color:var(--text);font-weight:600">Net P&L (INR)</span><span class="rv rv-big" style="color:${col(r.netPnl)}">${fmtINR(r.netPnl)}</span></div>
+    <div class="rrow"><span class="rl">ROE on margin</span><span class="rv" style="color:${col(r.roe)}">${fmt(r.roe,2)}%</span></div>
+  </div>`;
+}
+
+/* ── Save trade ── */
+async function saveTrade(){
+  const entry=parseFloat(document.getElementById('entry').value);
+  const lotSize=parseFloat(document.getElementById('lotSize').value);
+  const qty=parseFloat(document.getElementById('qtyTotal').value);
+  const dir=document.getElementById('dir').value;
+  const sl=parseFloat(document.getElementById('sl').value)||0;
+  const orderType=document.getElementById('orderType').value;
+  const coin=document.getElementById('coin').value||'UNKNOWN';
+  const slHit=document.getElementById('slHit').checked;
+  if(!entry||!lotSize||!qty){alert('Fill entry price, lot size, and quantity.');return;}
+  const targets=getTargets().filter(t=>t.price&&t.lots).map(({el,...t})=>t); // strip DOM el ref
+  const r=computeTrade(entry,lotSize,qty,dir,targets,orderType,slHit,sl);
+
+  showLoading('Saving trade…');
+  try{
+    const record={
+      coin, dir, entry, lot_size:lotSize, qty, sl, order_type:orderType,
+      sl_hit:slHit, targets:JSON.stringify(targets),
+      notional_entry:r.notionalEntry, margin:r.margin,
+      gross_pnl:r.totalGross, fees_amt:r.totalFees,
+      net_pnl:r.netPnl, roe:r.roe,
+      trade_date:new Date().toLocaleDateString('en-IN')
+    };
+    const {data,error}=await db.from('trades').insert([record]).select().single();
+    if(error) throw error;
+    // Normalise column names back to camelCase for local state
+    trades.push(normaliseTrade(data));
+    updateSummary(); renderHistory();
+    // Reset form
+    ['coin','entry','lotSize','qtyTotal','sl'].forEach(id=>document.getElementById(id).value='');
+    document.getElementById('targetRows').innerHTML=''; targetCount=0;
+    document.getElementById('calcResult').innerHTML='';
+    document.getElementById('posInfo').style.display='none';
+    document.getElementById('slCheckRow').style.display='none';
+    document.getElementById('slHitBanner').style.display='none';
+    document.getElementById('slHit').checked=false;
+    const tcard=document.getElementById('targetsCard');
+    tcard.style.opacity='1'; tcard.style.pointerEvents='auto';
+    addTarget();
+    // Go to history
+    document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+    document.querySelectorAll('.nav-btn').forEach(b=>b.classList.remove('active'));
+    document.getElementById('page-history').classList.add('active');
+    document.querySelectorAll('.nav-btn')[1].classList.add('active');
+  } catch(e){
+    alert('Failed to save trade: '+sbErr(e));
+  }
+  hideLoading();
+}
+
+/* Column name normaliser — Supabase returns snake_case, app uses camelCase */
+function normaliseTrade(t){
+  return{
+    id: t.id,
+    coin: t.coin,
+    dir: t.dir,
+    entry: t.entry,
+    lotSize: t.lot_size ?? t.lotSize,
+    qty: t.qty,
+    sl: t.sl,
+    orderType: t.order_type ?? t.orderType,
+    slHit: t.sl_hit ?? t.slHit ?? false,
+    targets: typeof t.targets==='string' ? JSON.parse(t.targets) : (t.targets||[]),
+    notionalEntry: t.notional_entry ?? t.notionalEntry,
+    margin: t.margin,
+    grossPnl: t.gross_pnl ?? t.grossPnl,
+    feesAmt: t.fees_amt ?? t.feesAmt,
+    netPnl: t.net_pnl ?? t.netPnl,
+    roe: t.roe,
+    date: t.trade_date ?? t.date
+  };
+}
+
+/* ── Delete trade ── */
+async function deleteTrade(id){
+  if(!confirm('Delete this trade?')) return;
+  showLoading('Deleting…');
+  try{
+    const {error}=await db.from('trades').delete().eq('id',id);
+    if(error) throw error;
+    trades=trades.filter(t=>t.id!==id);
+    updateSummary(); renderHistory();
+  } catch(e){
+    alert('Failed to delete trade: '+sbErr(e));
+  }
+  hideLoading();
+}
+
+/* ── Render history ── */
+function renderHistory(){
+  const list=document.getElementById('historyList');
+  if(!trades.length){list.innerHTML='<div class="empty-state">📭<br><br>No trades saved yet.</div>';return;}
+  list.innerHTML=[...trades].reverse().map(t=>`
+    <div class="trade-card">
+      <div class="trade-header">
+        <div>
+          <div class="trade-pair">${t.coin} <span class="badge ${t.dir}">${t.dir.toUpperCase()}</span> ${t.slHit?'<span class="badge sl">SL HIT</span>':''}</div>
+          <div class="trade-meta">${t.date} · ${t.orderType} · Entry $${t.entry.toLocaleString()}</div>
+        </div>
+        <div style="display:flex;align-items:flex-start;gap:8px">
+          <div>
+            <div class="trade-pnl-val" style="color:${col(t.netPnl)}">${t.netPnl>=0?'+':''}${t.netPnl.toFixed(2)}$</div>
+            <div class="trade-pnl-inr">${t.netPnl>=0?'+':'−'}₹${Math.abs(t.netPnl*INR_RATE).toFixed(2)}</div>
+          </div>
+          <button class="del-btn" onclick="deleteTrade(${t.id})">🗑</button>
+        </div>
+      </div>
+      <div class="trade-stats">
+        <div class="tstat"><div class="tstat-label">Lots</div><div class="tstat-val">${t.qty}</div></div>
+        <div class="tstat"><div class="tstat-label">Gross $</div><div class="tstat-val" style="color:${col(t.grossPnl)}">${t.grossPnl>=0?'+':''}${t.grossPnl.toFixed(2)}</div></div>
+        <div class="tstat"><div class="tstat-label">Fees $</div><div class="tstat-val" style="color:var(--amber)">−${t.feesAmt.toFixed(4)}</div></div>
+        <div class="tstat"><div class="tstat-label">Notional</div><div class="tstat-val">$${t.notionalEntry.toFixed(0)}</div></div>
+        <div class="tstat"><div class="tstat-label">Margin</div><div class="tstat-val">$${t.margin.toFixed(2)}</div></div>
+        <div class="tstat"><div class="tstat-label">ROE</div><div class="tstat-val" style="color:${col(t.roe)}">${t.roe>=0?'+':''}${t.roe.toFixed(2)}%</div></div>
+      </div>
+    </div>`).join('');
+}
+
+/* ── Update top summary & header ── */
+function updateSummary(){
+  const net=trades.reduce((a,t)=>a+t.netPnl,0);
+  const wins=trades.filter(t=>t.netPnl>0).length, total=trades.length;
+  document.getElementById('sTrades').textContent=total;
+  const nEl=document.getElementById('sNet');
+  nEl.textContent=(net>=0?'+':'')+net.toFixed(2)+'$';
+  nEl.className='s-val '+(net>=0?'green':'red');
+  const niEl=document.getElementById('sNetINR');
+  niEl.textContent=(net>=0?'+':'−')+'₹'+Math.abs(net*INR_RATE).toFixed(0);
+  niEl.className='s-val '+(net>=0?'green':'red');
+  document.getElementById('sWin').textContent=total?Math.round(wins/total*100)+'%':'—';
+  // Header balance
+  if(capital!=null){
+    const bal=capital+net;
+    const hEl=document.getElementById('hCapVal');
+    hEl.textContent='$'+bal.toFixed(2);
+    hEl.style.color=col(bal-capital);
+    hEl.classList.add('set');
+  }
+  // Summary page metrics
+  document.getElementById('msTrades').textContent=total;
+  document.getElementById('msWin').textContent=total?Math.round(wins/total*100)+'%':'—';
+}
+
+/* ── Capital tab ── */
+function updateCapitalTab(){
+  const net=trades.reduce((a,t)=>a+t.netPnl,0);
+  const gross=trades.reduce((a,t)=>a+t.grossPnl,0);
+  const fees=trades.reduce((a,t)=>a+t.feesAmt,0);
+  if(capital!=null){
+    const bal=capital+net;
+    document.getElementById('msCap').textContent='$'+capital.toFixed(2);
+    document.getElementById('msCapINR').textContent='₹'+(capital*INR_RATE).toFixed(2);
+    document.getElementById('csGross').innerHTML=`<span style="color:${col(gross)}">${fmt(gross,4)}$</span>`;
+    document.getElementById('csFees').textContent='−'+fees.toFixed(4)+'$ / ₹'+(fees*INR_RATE).toFixed(2);
+    document.getElementById('csNet').innerHTML=`<span style="color:${col(net)}">${fmt(net,4)}$</span>`;
+    document.getElementById('csNetINR').innerHTML=`<span style="color:${col(net)}">${fmtINR(net)}</span>`;
+    document.getElementById('csBal').innerHTML=`<span style="color:${col(bal-capital)}">$${bal.toFixed(2)}</span>`;
+    document.getElementById('csBalINR').innerHTML=`<span style="color:${col(bal-capital)}">₹${(bal*INR_RATE).toFixed(2)}</span>`;
+  }
+}
+
+/* ── Charts ── */
+function renderCharts(){
+  if(!trades.length) return;
+  const labels=trades.map((_,i)=>'#'+(i+1));
+  const cumPnl=[], cumFee=[];
+  trades.reduce((a,t)=>{const v=parseFloat((a+t.netPnl).toFixed(4));cumPnl.push(v);return a+t.netPnl;},0);
+  trades.reduce((a,t)=>{const v=parseFloat((a+t.feesAmt).toFixed(4));cumFee.push(v);return a+t.feesAmt;},0);
+  const barColors=trades.map(t=>t.netPnl>=0?'#0f6e56':'#a32d2d');
+  const gridColor='rgba(0,0,0,0.06)', tickColor='#9898b8';
+  const baseOpts={responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},
+    scales:{x:{ticks:{color:tickColor,font:{size:10}},grid:{color:gridColor}},
+            y:{ticks:{color:tickColor,font:{size:10}},grid:{color:gridColor}}}};
+  if(lineChart) lineChart.destroy();
+  lineChart=new Chart(document.getElementById('pnlChart'),{type:'line',
+    data:{labels,datasets:[{data:cumPnl,borderColor:'#534ab7',backgroundColor:'rgba(83,74,183,.08)',tension:.3,pointRadius:3,fill:true,pointBackgroundColor:'#534ab7'}]},
+    options:{...baseOpts,scales:{...baseOpts.scales,y:{...baseOpts.scales.y,ticks:{...baseOpts.scales.y.ticks,callback:v=>(v>=0?'+':'')+v.toFixed(2)+'$'}}}}});
+  if(barChartInst) barChartInst.destroy();
+  barChartInst=new Chart(document.getElementById('barChart'),{type:'bar',
+    data:{labels,datasets:[{data:trades.map(t=>parseFloat(t.netPnl.toFixed(4))),backgroundColor:barColors,borderRadius:3}]},
+    options:{...baseOpts,scales:{...baseOpts.scales,y:{...baseOpts.scales.y,ticks:{...baseOpts.scales.y.ticks,callback:v=>(v>=0?'+':'')+v.toFixed(2)+'$'}}}}});
+  if(feeChartInst) feeChartInst.destroy();
+  feeChartInst=new Chart(document.getElementById('feeChart'),{type:'line',
+    data:{labels,datasets:[{data:cumFee,borderColor:'#854f0b',backgroundColor:'rgba(133,79,11,.07)',tension:.3,pointRadius:3,fill:true}]},
+    options:{...baseOpts,scales:{...baseOpts.scales,y:{...baseOpts.scales.y,ticks:{...baseOpts.scales.y.ticks,callback:v=>'−'+v.toFixed(4)+'$'}}}}});
+}
+
+/* ── Init ── */
+(async()=>{
+  addTarget();
+  await loadTrades();
+  // loadTrades already calls updateSummary and renderHistory after fetching
+})();
+
+</script>
+</body>
+</html>
