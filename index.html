@@ -444,8 +444,16 @@ function toggleSLHit(){
 
   if(hit){
     banner.style.display='block';
-    tcard.style.opacity='0.4'; tcard.style.pointerEvents='none';
-    addBtn.disabled=true;
+    document.getElementById('targetRows').style.opacity = '0.4';
+
+    // Disable only inputs inside targets
+    document.querySelectorAll('#targetsCard input, #targetsCard button.add-tg-btn').forEach(el => {
+      el.disabled = true;
+    });
+
+    // BUT keep calculate & save buttons active
+    document.getElementById('calcBtn').disabled = false;
+    document.getElementById('saveBtn').disabled = false;
 
         // BUT keep calculate & save buttons active
     document.getElementById('calcBtn').style.opacity = '1';
