@@ -443,9 +443,16 @@ function toggleSLHit(){
   const calcBtn=document.getElementById('calcBtn');
 
   if(hit){
-    banner.style.display='block';
-    tcard.style.opacity='0.4'; tcard.style.pointerEvents='none';
-    addBtn.disabled=true; calcBtn.disabled=false;
+    tcard.style.opacity = '0.4';
+
+    // Disable only inputs inside targets
+    document.querySelectorAll('#targetsCard input, #targetsCard button.add-tg-btn').forEach(el => {
+      el.disabled = true;
+    });
+
+    // BUT keep calculate & save buttons active
+    document.getElementById('calcBtn').disabled = false;
+    document.getElementById('saveBtn').disabled = false;
     // show SL loss
     const entry=parseFloat(document.getElementById('entry').value)||0;
     const sl=parseFloat(document.getElementById('sl').value)||0;
